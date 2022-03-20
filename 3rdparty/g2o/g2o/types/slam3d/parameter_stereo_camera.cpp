@@ -25,24 +25,48 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "parameter_stereo_camera.h"
+#include "isometry3d_gradients.h"
+#include "isometry3d_mappings.h"
 
-#include "g2o/stuff/misc.h"
+#ifdef WINDOWS
+#include <windows.h>
+#endif
+
+using namespace std;
 
 namespace g2o {
 
-ParameterStereoCamera::ParameterStereoCamera()
-    : ParameterCamera(), _baseline(cst(0.075)) {}
+  ParameterStereoCamera::ParameterStereoCamera(){
+    setBaseline(0.075);
+  }
 
-bool ParameterStereoCamera::read(std::istream& is) {
-  bool state = ParameterCamera::read(is);
-  is >> _baseline;
-  return is.good() && state;
+  bool ParameterStereoCamera::read(std::istream& is) {
+    Vector7d off;
+    for (int i=0; i<7; i++)
+      is >> off[i];
+    // normalize the quaternion to recover numerical precision lost by storing as human readable text
+    Vector4D::MapType(off.data()+3).normalize();
+    setOffset(internal::fromVectorQT(off));
+    double fx,fy,cx,cy;
+    is >> fx >> fy >> cx >> cy;
+    setKcam(fx,fy,cx,cy);
+    double baseline_;
+    is >> baseline_;
+    setBaseline(baseline_);
+    return is.good();
+  }
+  
+  bool ParameterStereoCamera::write(std::ostream& os) const {
+    Vector7d off = internal::toVectorQT(_offset);
+    for (int i=0; i<7; i++)
+      os << off[i] << " ";
+    os << _Kcam(0,0) << " ";
+    os << _Kcam(1,1) << " ";
+    os << _Kcam(0,2) << " ";
+    os << _Kcam(1,2) << " ";
+    os << baseline() << " ";
+    return os.good();
+  }
+
+
 }
-
-bool ParameterStereoCamera::write(std::ostream& os) const {
-  bool state = ParameterCamera::write(os);
-  os << baseline() << " ";
-  return state && os.good();
-}
-
-}  // namespace g2o

@@ -32,64 +32,75 @@ using namespace std;
 
 namespace g2o {
 
-RawLaser::RawLaser()
-    : RobotData(),
-      _laserParams(0, 180, -const_pi() / 2, const_pi() / 180, 50, cst(0.1), 0) {
-}
-
-RawLaser::~RawLaser() {}
-
-bool RawLaser::write(std::ostream& /*os*/) const {
-  // TODO
-  cerr << "RawLaser::write() not implemented yet." << endl;
-  return false;
-}
-
-bool RawLaser::read(std::istream& is) {
-  int type;
-  number_t angle, fov, res, maxrange, acc;
-  int remission_mode;
-  is >> type >> angle >> fov >> res >> maxrange >> acc >> remission_mode;
-
-  int beams;
-  is >> beams;
-  _laserParams =
-      LaserParameters(type, beams, angle, res, maxrange, acc, remission_mode);
-  _ranges.resize(beams);
-  for (int i = 0; i < beams; i++) is >> _ranges[i];
-
-  is >> beams;
-  _remissions.resize(beams);
-  for (int i = 0; i < beams; i++) is >> _remissions[i];
-
-  // timestamp + host
-  is >> _timestamp;
-  is >> _hostname;
-  is >> _loggerTimestamp;
-  return true;
-}
-
-void RawLaser::setRanges(const vector<number_t>& ranges) { _ranges = ranges; }
-
-void RawLaser::setRemissions(const std::vector<number_t>& remissions) {
-  _remissions = remissions;
-}
-
-void RawLaser::setLaserParams(const LaserParameters& laserParams) {
-  _laserParams = laserParams;
-}
-
-RawLaser::Point2DVector RawLaser::cartesian() const {
-  Point2DVector points;
-  for (size_t i = 0; i < _ranges.size(); ++i) {
-    const number_t& r = _ranges[i];
-    if (r < _laserParams.maxRange && r > _laserParams.minRange) {
-      number_t alpha =
-          _laserParams.firstBeamAngle + i * _laserParams.angularStep;
-      points.push_back(Vector2(std::cos(alpha) * r, std::sin(alpha) * r));
-    }
+  RawLaser::RawLaser() :
+    RobotData(),
+    _laserParams(0, 180, -M_PI/2, M_PI/180., 50.,0.1, 0)
+  {
   }
-  return points;
-}
 
-}  // namespace g2o
+  RawLaser::~RawLaser()
+  {
+  }
+
+  bool RawLaser::write(std::ostream& /*os*/) const
+  {
+    // TODO
+    cerr << "RawLaser::write() not implemented yet." << endl;
+    return false;
+  }
+
+  bool RawLaser::read(std::istream& is)
+  {
+    int type;
+    double angle, fov, res, maxrange, acc;
+    int remission_mode;
+    is >> type >> angle >> fov >> res >> maxrange >> acc >> remission_mode;
+
+    int beams;
+    is >> beams;
+    _laserParams = LaserParameters(type, beams, angle, res, maxrange, acc, remission_mode);      
+    _ranges.resize(beams);
+    for (int i=0; i<beams; i++)
+      is >> _ranges[i];
+
+    is >> beams;
+    _remissions.resize(beams);
+    for (int i=0; i < beams; i++)
+      is >> _remissions[i];
+
+    // timestamp + host
+    is >> _timestamp;
+    is >> _hostname;
+    is >> _loggerTimestamp;
+    return true;
+  }
+
+  void RawLaser::setRanges(const vector<double>& ranges)
+  {
+    _ranges = ranges;
+  }
+
+  void RawLaser::setRemissions(const std::vector<double>& remissions)
+  {
+    _remissions = remissions;
+  }
+
+  void RawLaser::setLaserParams(const LaserParameters& laserParams)
+  {
+    _laserParams = laserParams;
+  }
+
+  RawLaser::Point2DVector RawLaser::cartesian() const
+  {
+    Point2DVector points;
+    for (size_t i = 0; i < _ranges.size(); ++i) {
+      const double& r = _ranges[i];
+      if (r < _laserParams.maxRange) {
+        double alpha = _laserParams.firstBeamAngle + i * _laserParams.angularStep;
+        points.push_back(Vector2D(cos(alpha) * r, sin(alpha) * r));
+      }
+    }
+    return points;
+  }
+
+} // end namespace

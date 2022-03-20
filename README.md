@@ -1,76 +1,31 @@
-# NOTE
-[Slambook 2](https://github.com/gaoxiang12/slambook2) has be released since 2019.8 which has better support on Ubuntu 18.04 and has a lot of new features. Slambook 1 will still be available on github but I suggest new readers switch to the second version. 
+## Slambook2
+![titlepage](./figures/title.png)
 
-[Slambook-en](https://github.com/gaoxiang12/slambook-en) has also been completed recently. 
+Welcome to Slambook 2nd Edition! This is the codebase of our book. Here are some relavant links if you need them: 
+- [Our book at jd.com](https://item.jd.com/12666058.html)
+- [Our book at douban.com](https://book.douban.com/subject/27028215/) (I'll be happy to get a score at douban)
+- [code of slambook version 1](https://github.com/gaoxiang12/slambook)
+- [slambook in English](https://github.com/gaoxiang12/slambook-en) (Still on going)
 
-# slambook
-This is the code written for my new book about visual SLAM called "14 lectures on visual SLAM" which was released in April 2017. It is highy recommended to download the code and run it in you own machine so that you can learn more efficiently and also modify it. The code is stored by chapters like "ch2" and "ch4". Note that chapter 9 is a project so I stored it in the "project" directory.
+Email me if you have any questions: gao.xiang.thu at gmail dot com. Or send a issue at github if your question is about the code.
 
-If you have any questions about the code, please add an issue so I can see it. Contact me for more information: gao dot xiang dot thu at gmail dot com.
+Errata will be updated at this code base.
 
-These codes are under MIT license. You don't need permission to use it or change it. 
-Please cite this book if you are doing academic work:
-Xiang Gao, Tao Zhang, Yi Liu, Qinrui Yan, 14 Lectures on Visual SLAM: From Theory to Practice, Publishing House of Electronics Industry, 2017.
+Hope you like this book.
 
-In LaTeX:
-`` @Book{Gao2017SLAM, 
-title={14 Lectures on Visual SLAM: From Theory to Practice}, 
-publisher = {Publishing House of Electronics Industry},
-year = {2017},
-author = {Xiang Gao and Tao Zhang and Yi Liu and Qinrui Yan},
-} ``
-# Contents
-- ch1 Preface
-- ch2 Overview of SLAM & linux, cmake
-- ch3 Rigid body motion & Eigen
-- ch4 Lie group and Lie Algebra & Sophus
-- ch5 Cameras and Images & OpenCV
-- ch6 Non-linear optimization & Ceres, g2o
-- ch7 Feature based Visual Odometry
-- ch8 Direct (Intensity based) Visual Odometry
-- ch9 Project
-- ch10 Back end optimization & Ceres, g2o
-- ch11 Pose graph and Factor graph & g2o, gtsam
-- ch12 Loop closure & DBoW3
-- ch13 Dense reconstruction & REMODE, Octomap
+BaiduYun backup link in case your github is very slow (common in China): [here](https://pan.baidu.com/s/1XQwpnDb3BOvxXZhL-03p3w)
 
-# slambook (中文说明)
-我最近写了一本有关视觉SLAM的书籍，这是它对应的代码。书籍将会在明年春天由电子工业出版社出版。
+---
+## 视觉SLAM十四讲：从理论到实践 第二版
+欢迎来到视觉SLAM十四讲：从理论到实践。这里存放本书对应的代码文件。以下是一些可能对你有用的链接：
+- [京东书籍链接](https://item.jd.com/12666058.html)
+- [第一版书代码](https://github.com/gaoxiang12/slambook)
+- [英文版代码](https://github.com/gaoxiang12/slambook-en) (正在翻译中)
 
-我强烈建议你下载这个代码。书中虽然给出了一部分，但你最好在自己的机器上编译运行它们，然后对它们进行修改以获得更好的理解。这本书的代码是按章节划分的，比如第二章内容在”ch2“文件夹下。注意第九章是工程，所以我们没有”ch9“这个文件夹，而是在”project“中存储它。
+如果您对书籍内容有疑问，请给我发送邮件。如果对代码有疑问，请点击上方的issue链接新建issues。我会不定期查看和回复（抱歉我可能无法回复所有问题和邮件）。
 
-如果你在运行代码中发现问题，请在这里提交一个issue，我就能看到它。如果你有更多的问题，请给我发邮件：gaoxiang12 dot mails dot tsinghua dot edu dot cn.
+勘误表会更新到代码库中。
 
-本书代码使用MIT许可。使用或修改、发布都不必经过我的同意。不过，如果你是在学术工作中使用它，建议你引用本书作为参考文献。
+希望您喜欢本书。
 
-引用格式：
-高翔, 张涛, 颜沁睿, 刘毅, 视觉SLAM十四讲：从理论到实践, 电子工业出版社, 2017
-
-LaTeX格式:
-`` @Book{Gao2017SLAM, 
-title={视觉SLAM十四讲：从理论到实践}, 
-publisher = {电子工业出版社},
-year = {2017},
-author = {高翔 and 张涛 and 刘毅 and 颜沁睿},
-lang = {zh}
-} ``
-
-# 目录
-- ch2 概述，cmake基础
-- ch3 Eigen，三维几何
-- ch4 Sophus，李群与李代数
-- ch5 OpenCV，图像与相机模型
-- ch6 Ceres and g2o，非线性优化
-- ch7 特征点法视觉里程计
-- ch8 直接法视觉里程计
-- ch9 project
-- ch10 Ceres and g2o，后端优化1
-- ch11 g2o and gtsam，位姿图优化
-- ch12 DBoW3，词袋方法
-- ch13 稠密地图构建
-
-关于勘误，请参照本代码根目录下的errata.xlsx文件。此文件包含本书从第一次印刷至现在的勘误信息。勘误将随着书籍的印刷版本更新。
-
-# 备注
-百度云备份：[https://pan.baidu.com/s/1slDE7cL]
-Videos: [https://space.bilibili.com/38737757]
+本代码的百度云备份（如果您的github速度非常慢）[下载链接](https://pan.baidu.com/s/1XQwpnDb3BOvxXZhL-03p3w).

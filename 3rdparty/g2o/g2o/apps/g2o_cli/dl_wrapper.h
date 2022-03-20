@@ -27,60 +27,58 @@
 #ifndef G2O_DL_WRAPPER_H
 #define G2O_DL_WRAPPER_H
 
-// clang-format off
+#include <vector>
+#include <string>
+
 #ifdef WINDOWS
 #include <windows.h>
 #endif
-// clang-format on
-
-#include <string>
-#include <vector>
 
 #include "g2o_cli_api.h"
 
 namespace g2o {
 
-/**
- * \brief Loading libraries during run-time
- */
-class G2O_CLI_API DlWrapper {
- public:
-  DlWrapper();
-  virtual ~DlWrapper();
-
   /**
-   * open all libs from a directory matching a specific pattern.
-   * @return number of loaded libs
+   * \brief Loading libraries during run-time
    */
-  int openLibraries(const std::string& directory,
-                    const std::string& pattern = "");
+  class G2O_CLI_API DlWrapper
+  {
+    public:
+      DlWrapper();
+      virtual ~DlWrapper();
 
-  /**
-   * open a specific library
-   */
-  bool openLibrary(const std::string& filename);
+      /**
+       * open all libs from a directory matching a specific pattern.
+       * @return number of loaded libs
+       */
+      int openLibraries(const std::string& directory, const std::string& pattern = "");
 
-  /**
-   * free all loaded libs, i.e., call dlclose()
-   */
-  void clear();
+      /**
+       * open a specific library
+       */
+      bool openLibrary(const std::string& filename);
 
- protected:
-#if defined(UNIX) || defined(CYGWIN)
-  std::vector<void*> _handles;
-#elif defined(WINDOWS)
-  std::vector<HMODULE> _handles;
-#endif
-  std::vector<std::string> _filenames;
+      /**
+       * free all loaded libs, i.e., call dlclose()
+       */
+      void clear();
 
- private:
-  /**
-   * it's not allowed to draw a copy of the wrapper
-   */
-  DlWrapper(const DlWrapper&);
-  DlWrapper& operator=(const DlWrapper&);
-};
+    protected:
+# if defined (UNIX) || defined(CYGWIN)
+      std::vector<void*> _handles;
+#     elif defined (WINDOWS)
+      std::vector<HMODULE> _handles;
+#     endif
+      std::vector<std::string> _filenames;
 
-}  // namespace g2o
+    private:
+      /**
+       * it's not allowed to draw a copy of the wrapper
+       */
+      DlWrapper(const DlWrapper& );
+      DlWrapper& operator=(const DlWrapper& );
+  };
+
+}
 
 #endif

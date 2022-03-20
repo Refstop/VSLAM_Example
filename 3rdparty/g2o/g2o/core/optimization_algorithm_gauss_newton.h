@@ -27,34 +27,29 @@
 #ifndef G2O_OPTIMIZATION_ALGORITHM_GAUSS_NEWTON_H
 #define G2O_OPTIMIZATION_ALGORITHM_GAUSS_NEWTON_H
 
-#include <memory>
-
 #include "g2o_core_api.h"
 #include "optimization_algorithm_with_hessian.h"
 
 namespace g2o {
 
-/**
- * \brief Implementation of the Gauss Newton Algorithm
- */
-class G2O_CORE_API OptimizationAlgorithmGaussNewton
-    : public OptimizationAlgorithmWithHessian {
- public:
   /**
-   * construct the Gauss Newton algorithm, which use the given Solver for
-   * solving the linearized system.
+   * \brief Implementation of the Gauss Newton Algorithm
    */
-  explicit OptimizationAlgorithmGaussNewton(std::unique_ptr<Solver> solver);
-  virtual ~OptimizationAlgorithmGaussNewton();
+  class G2O_CORE_API OptimizationAlgorithmGaussNewton : public OptimizationAlgorithmWithHessian
+  {
+    public:
+      /**
+       * construct the Gauss Newton algorithm, which use the given Solver for solving the
+       * linearized system.
+       */
+      explicit OptimizationAlgorithmGaussNewton(Solver* solver);
+      virtual ~OptimizationAlgorithmGaussNewton();
 
-  virtual SolverResult solve(int iteration, bool online = false);
+      virtual SolverResult solve(int iteration, bool online = false);
 
-  virtual void printVerbose(std::ostream& os) const;
+      virtual void printVerbose(std::ostream& os) const;
+  };
 
- private:
-  std::unique_ptr<Solver> m_solver;
-};
-
-}  // namespace g2o
+} // end namespace
 
 #endif

@@ -25,14 +25,13 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "isometry3d_gradients.h"
-
 #include <iostream>
 namespace g2o {
-using namespace std;
-using namespace Eigen;
+  using namespace std;
+  using namespace Eigen;
 
-namespace internal {
-#include "dquat2mat.cpp"
-}  // end namespace internal
+  namespace internal {
+  #include "dquat2mat.cpp"
+  } // end namespace internal
 
-}  // namespace g2o
+} // end namespace

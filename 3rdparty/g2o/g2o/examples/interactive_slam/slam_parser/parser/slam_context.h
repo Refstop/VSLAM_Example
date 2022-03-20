@@ -33,14 +33,15 @@ namespace SlamParser {
 
 class CommandNode;
 
-class SlamContext {
- public:
-  SlamContext();
-  virtual ~SlamContext();
+class SlamContext
+{
+  public:
+    SlamContext();
+    virtual ~SlamContext();
 
-  virtual bool process(CommandNode* commandNode);
+    virtual bool process(CommandNode* commandNode);
 };
 
-}  // namespace SlamParser
+} // end namespace
 
 #endif

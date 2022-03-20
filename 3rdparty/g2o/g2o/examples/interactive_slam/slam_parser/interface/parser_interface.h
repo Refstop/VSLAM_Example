@@ -27,41 +27,39 @@
 #ifndef PARSER_INTERFACE_H
 #define PARSER_INTERFACE_H
 
+#include "abstract_slam_interface.h"
+
 #include <iosfwd>
 #include <sstream>
 
-#include "abstract_slam_interface.h"
-
 namespace SlamParser {
 
-class SlamContextInterface;
-class Driver;
-
-/**
- * \brief top-level interface to the parser
- */
-class ParserInterface {
- public:
-  /**
-   * construct a parser and use the given AbstractSlamInterface to communicate
-   * with the SLAM algorithm.
-   */
-  explicit ParserInterface(AbstractSlamInterface* slamInterface);
-  ParserInterface& operator=(const ParserInterface&) = delete;
-  ParserInterface(const ParserInterface&) = delete;
-  virtual ~ParserInterface();
+  class SlamContextInterface;
+  class Driver;
 
   /**
-   * parse a single command and forward to the SLAM engine
+   * \brief top-level interface to the parser
    */
-  bool parseCommand(std::istream& input);
+  class ParserInterface
+  {
+    public:
+      /**
+       * construct a parser and use the given AbstractSlamInterface to communicate with the SLAM algorithm.
+       */
+      ParserInterface(AbstractSlamInterface* slamInterface);
+      virtual ~ParserInterface();
 
- protected:
-  SlamContextInterface* _slamContextInterface;
-  Driver* _driver;
-  std::stringstream _buffer;
-};
+      /**
+       * parse a single command and forward to the SLAM engine
+       */ 
+      bool parseCommand(std::istream& input);
 
-}  // namespace SlamParser
+    protected:
+      SlamContextInterface* _slamContextInterface;
+      Driver* _driver;
+      std::stringstream _buffer;
+  };
+
+} // end namespace
 
 #endif

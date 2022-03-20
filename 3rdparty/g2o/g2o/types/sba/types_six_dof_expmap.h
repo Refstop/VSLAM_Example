@@ -27,23 +27,177 @@
 #ifndef G2O_SIX_DOF_TYPES_EXPMAP
 #define G2O_SIX_DOF_TYPES_EXPMAP
 
-// #include "g2o/core/base_vertex.h"
-// #include "g2o/core/base_binary_edge.h"
-// #include "g2o/core/base_unary_edge.h"
-// #include "g2o/core/base_variable_sized_edge.h"
-// #include "g2o/types/slam3d/se3_ops.h"
-// #include "types_sba.h"
-// #include <Eigen/Geometry>
+#include "g2o/core/base_vertex.h"
+#include "g2o/core/base_binary_edge.h"
+#include "g2o/types/slam3d/se3_ops.h"
+#include "types_sba.h"
+#include <Eigen/Geometry>
 
-#include "edge_project_psi2uv.h"
-#include "edge_project_stereo_xyz.h"
-#include "edge_project_stereo_xyz_onlypose.h"
-#include "edge_project_xyz.h"
-#include "edge_project_xyz2uv.h"
-#include "edge_project_xyz2uvu.h"
-#include "edge_project_xyz_onlypose.h"
-#include "edge_se3_expmap.h"
-#include "parameter_cameraparameters.h"
-#include "vertex_se3_expmap.h"
+namespace g2o {
+namespace types_six_dof_expmap {
+void init();
+}
+
+typedef Eigen::Matrix<double, 6, 6, Eigen::ColMajor> Matrix6d;
+
+class G2O_TYPES_SBA_API CameraParameters : public g2o::Parameter
+{
+  public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    CameraParameters();
+
+    CameraParameters(double focal_length,
+        const Vector2D & principle_point,
+        double baseline)
+      : focal_length(focal_length),
+      principle_point(principle_point),
+      baseline(baseline){}
+
+    Vector2D cam_map (const Vector3D & trans_xyz) const;
+
+    Vector3D stereocam_uvu_map (const Vector3D & trans_xyz) const;
+
+    virtual bool read (std::istream& is){
+      is >> focal_length;
+      is >> principle_point[0];
+      is >> principle_point[1];
+      is >> baseline;
+      return true;
+    }
+
+    virtual bool write (std::ostream& os) const {
+      os << focal_length << " ";
+      os << principle_point.x() << " ";
+      os << principle_point.y() << " ";
+      os << baseline << " ";
+      return true;
+    }
+
+    double focal_length;
+    Vector2D principle_point;
+    double baseline;
+};
+
+/**
+ * \brief SE3 Vertex parameterized internally with a transformation matrix
+ and externally with its exponential map
+ */
+class G2O_TYPES_SBA_API VertexSE3Expmap : public BaseVertex<6, SE3Quat>{
+public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+  VertexSE3Expmap();
+
+  bool read(std::istream& is);
+
+  bool write(std::ostream& os) const;
+
+  virtual void setToOriginImpl() {
+    _estimate = SE3Quat();
+  }
+
+  virtual void oplusImpl(const double* update_)  {
+    Eigen::Map<const Vector6d> update(update_);
+    setEstimate(SE3Quat::exp(update)*estimate());
+  }
+};
+
+
+/**
+ * \brief 6D edge between two Vertex6
+ */
+class G2O_TYPES_SBA_API EdgeSE3Expmap : public BaseBinaryEdge<6, SE3Quat, VertexSE3Expmap, VertexSE3Expmap>{
+  public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+      EdgeSE3Expmap();
+
+    bool read(std::istream& is);
+
+    bool write(std::ostream& os) const;
+
+    void computeError()  {
+      const VertexSE3Expmap* v1 = static_cast<const VertexSE3Expmap*>(_vertices[0]);
+      const VertexSE3Expmap* v2 = static_cast<const VertexSE3Expmap*>(_vertices[1]);
+
+      SE3Quat C(_measurement);
+      SE3Quat error_= v2->estimate().inverse()*C*v1->estimate();
+      _error = error_.log();
+    }
+
+    virtual void linearizeOplus();
+};
+
+
+class G2O_TYPES_SBA_API EdgeProjectXYZ2UV : public  BaseBinaryEdge<2, Vector2D, VertexSBAPointXYZ, VertexSE3Expmap>{
+  public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+
+    EdgeProjectXYZ2UV();
+
+    bool read(std::istream& is);
+
+    bool write(std::ostream& os) const;
+
+    void computeError()  {
+      const VertexSE3Expmap* v1 = static_cast<const VertexSE3Expmap*>(_vertices[1]);
+      const VertexSBAPointXYZ* v2 = static_cast<const VertexSBAPointXYZ*>(_vertices[0]);
+      const CameraParameters * cam
+        = static_cast<const CameraParameters *>(parameter(0));
+      Vector2D obs(_measurement);
+      _error = obs-cam->cam_map(v1->estimate().map(v2->estimate()));
+    }
+
+    virtual void linearizeOplus();
+
+    CameraParameters * _cam;
+};
+
+
+class G2O_TYPES_SBA_API EdgeProjectPSI2UV : public  g2o::BaseMultiEdge<2, Vector2D>
+{
+public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+  EdgeProjectPSI2UV()  {
+    resizeParameters(1);
+    installParameter(_cam, 0);
+  }
+
+  virtual bool read  (std::istream& is);
+  virtual bool write (std::ostream& os) const;
+  void computeError  ();
+  virtual void linearizeOplus ();
+  CameraParameters * _cam;
+};
+
+
+
+//Stereo Observations
+// U: left u
+// V: left v
+// U: right u
+class G2O_TYPES_SBA_API EdgeProjectXYZ2UVU : public  BaseBinaryEdge<3, Vector3D, VertexSBAPointXYZ, VertexSE3Expmap>{
+  public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+
+    EdgeProjectXYZ2UVU();
+
+    bool read(std::istream& is);
+
+    bool write(std::ostream& os) const;
+
+    void computeError(){
+      const VertexSE3Expmap* v1 = static_cast<const VertexSE3Expmap*>(_vertices[1]);
+      const VertexSBAPointXYZ* v2 = static_cast<const VertexSBAPointXYZ*>(_vertices[0]);
+      const CameraParameters * cam
+        = static_cast<const CameraParameters *>(parameter(0));
+      Vector3D obs(_measurement);
+      _error = obs-cam->stereocam_uvu_map(v1->estimate().map(v2->estimate()));
+    }
+    //  virtual void linearizeOplus();
+    CameraParameters * _cam;
+};
+
+} // end namespace
 
 #endif

@@ -26,73 +26,74 @@
 
 #include "sparse_helper.h"
 
-#include <algorithm>
+#include <string>
 #include <fstream>
 #include <iomanip>
-#include <string>
 #include <vector>
+#include <algorithm>
 
 using namespace std;
 
 namespace g2o {
 
-static bool writeTripletEntries(const std::string& filename, int rows, int cols,
-                                const std::vector<TripletEntry>& triplets) {
-  string name = filename;
-  std::string::size_type lastDot = name.find_last_of('.');
-  if (lastDot != std::string::npos) name = name.substr(0, lastDot);
-
-  std::ofstream fout(filename.c_str());
-  fout << "# name: " << name << std::endl;
-  fout << "# type: sparse matrix" << std::endl;
-  fout << "# nnz: " << triplets.size() << std::endl;
-  fout << "# rows: " << rows << std::endl;
-  fout << "# columns: " << cols << std::endl;
-  // fout << fixed;
-  fout << setprecision(9) << endl;
-  for (const TripletEntry& entry : triplets) {
-    fout << entry.r + 1 << " " << entry.c + 1 << " " << entry.x << std::endl;
+  namespace {
+    struct TripletEntry
+    {
+      int r, c;
+      double x;
+      TripletEntry(int r_, int c_, double x_) : r(r_), c(c_), x(x_) {}
+    };
+    struct TripletColSort
+    {
+      bool operator()(const TripletEntry& e1, const TripletEntry& e2) const
+      {
+        return e1.c < e2.c || (e1.c == e2.c && e1.r < e2.r);
+      }
+    };
   }
-  return fout.good();
-}
 
-bool writeVector(const string& filename, const number_t* v, int n) {
-  ofstream os(filename.c_str());
-  os << fixed;
-  for (int i = 0; i < n; i++) os << *v++ << endl;
-  return os.good();
-}
+  bool writeVector(const string& filename, const double*v, int n)
+  {
+    ofstream os(filename.c_str());
+    os << fixed;
+    for (int i=0; i<n; i++)
+      os << *v++ << endl;
+    return os.good();
+  }
 
-bool writeCCSMatrix(const string& filename, int rows, int cols, const int* Ap,
-                    const int* Ai, const double* Ax,
-                    bool upperTriangleSymmetric) {
-  vector<TripletEntry> entries;
-  entries.reserve((size_t)Ap[cols]);
-  for (int i = 0; i < cols; i++) {
-    const int& rbeg = Ap[i];
-    const int& rend = Ap[i + 1];
-    for (int j = rbeg; j < rend; j++) {
-      entries.emplace_back(TripletEntry(Ai[j], i, Ax[j]));
-      if (upperTriangleSymmetric && Ai[j] != i)
-        entries.emplace_back(TripletEntry(i, Ai[j], Ax[j]));
+  bool writeCCSMatrix(const string& filename, int rows, int cols, const int* Ap, const int* Ai, const double* Ax, bool upperTriangleSymmetric)
+  {
+    vector<TripletEntry> entries;
+    entries.reserve((size_t)Ap[cols]);
+    for (int i=0; i < cols; i++) {
+      const int& rbeg = Ap[i];
+      const int& rend = Ap[i+1];
+      for (int j = rbeg; j < rend; j++) {
+        entries.push_back(TripletEntry(Ai[j], i, Ax[j]));
+        if (upperTriangleSymmetric && Ai[j] != i)
+          entries.push_back(TripletEntry(i, Ai[j], Ax[j]));
+      }
     }
-  }
-  sort(entries.begin(), entries.end(), TripletColSort());
-  return writeTripletEntries(filename, rows, cols, entries);
-}
+    sort(entries.begin(), entries.end(), TripletColSort());
 
-bool writeTripletMatrix(const std::string& filename, int nz, int rows, int cols,
-                        const int* Ai, const int* Aj, const double* Ax,
-                        bool upperTriangleSymmetric) {
-  vector<TripletEntry> entries;
-  entries.reserve(nz);
-  for (int i = 0; i < nz; ++i) {
-    entries.emplace_back(TripletEntry(Ai[i], Aj[i], Ax[i]));
-    if (upperTriangleSymmetric && Ai[i] != Aj[i])
-      entries.emplace_back(TripletEntry(Aj[i], Ai[i], Ax[i]));
-  }
-  sort(entries.begin(), entries.end(), TripletColSort());
-  return writeTripletEntries(filename, rows, cols, entries);
-}
+    string name = filename;
+    std::string::size_type lastDot = name.find_last_of('.');
+    if (lastDot != std::string::npos) 
+      name = name.substr(0, lastDot);
 
-}  // namespace g2o
+    std::ofstream fout(filename.c_str());
+    fout << "# name: " << name << std::endl;
+    fout << "# type: sparse matrix" << std::endl;
+    fout << "# nnz: " << entries.size() << std::endl;
+    fout << "# rows: " << rows << std::endl;
+    fout << "# columns: " << cols << std::endl;
+    //fout << fixed;
+    fout << setprecision(9) << endl;
+    for (vector<TripletEntry>::const_iterator it = entries.begin(); it != entries.end(); ++it) {
+      const TripletEntry& entry = *it;
+      fout << entry.r+1 << " " << entry.c+1 << " " << entry.x << std::endl;
+    }
+    return fout.good();
+  }
+
+} // end namespace

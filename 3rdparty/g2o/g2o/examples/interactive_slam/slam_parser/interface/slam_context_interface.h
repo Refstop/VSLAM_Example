@@ -31,21 +31,20 @@
 
 namespace SlamParser {
 
-class AbstractSlamInterface;
+  class AbstractSlamInterface;
 
-class SlamContextInterface : public SlamContext {
- public:
-  explicit SlamContextInterface(AbstractSlamInterface* slam);
-  SlamContextInterface& operator=(const SlamContextInterface&) = delete;
-  SlamContextInterface(const SlamContextInterface&) = delete;
-  ~SlamContextInterface();
+  class SlamContextInterface : public SlamContext
+  {
+    public:
+      SlamContextInterface(AbstractSlamInterface* slam);
+      ~SlamContextInterface();
 
-  bool process(CommandNode* commandNode);
+      bool process(CommandNode* commandNode);
 
- protected:
-  AbstractSlamInterface* _slam;
-};
+    protected:
+      AbstractSlamInterface* _slam;
+  };
 
-}  // namespace SlamParser
+} // end namespace
 
 #endif

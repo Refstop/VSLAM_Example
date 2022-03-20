@@ -1,7 +1,12 @@
-add_executable(bal_example bal_example.cpp)
+IF(CHOLMOD_INCLUDE_DIR OR CSPARSE_INCLUDE_DIR)
+  ADD_EXECUTABLE(bal_example bal_example.cpp)
+ENDIF()
 
-if(CHOLMOD_FOUND)
-  target_link_libraries(bal_example solver_cholmod)
-else()
-  target_link_libraries(bal_example solver_eigen)
-endif()
+# Link CHOLMOD if available, CSparse otherwise
+IF(CHOLMOD_FOUND)
+  INCLUDE_DIRECTORIES(${CHOLMOD_INCLUDE_DIR})
+  TARGET_LINK_LIBRARIES(bal_example solver_cholmod)
+ELSEIF(CSPARSE_FOUND)
+  INCLUDE_DIRECTORIES(${CSPARSE_INCLUDE_DIR})
+  TARGET_LINK_LIBRARIES(bal_example solver_csparse)
+ENDIF()

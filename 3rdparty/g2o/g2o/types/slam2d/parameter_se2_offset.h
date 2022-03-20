@@ -27,84 +27,89 @@
 #ifndef G2O_VERTEX_SE2_OFFSET_PARAMETERS_H_
 #define G2O_VERTEX_SE2_OFFSET_PARAMETERS_H_
 
-#include "g2o/core/cache.h"
-#include "g2o_types_slam2d_api.h"
+#include "g2o/core/optimizable_graph.h"
+
 #include "se2.h"
+#include "g2o_types_slam2d_api.h"
+#include "g2o/core/hyper_graph_action.h"
+#include "g2o/core/cache.h"
+
+#include <Eigen/Geometry>
 
 namespace g2o {
 
-class VertexSE2;
-
-/**
- * \brief offset for an SE2
- */
-class G2O_TYPES_SLAM2D_API ParameterSE2Offset : public Parameter {
- public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-  ParameterSE2Offset();
-
-  virtual bool read(std::istream& is);
-  virtual bool write(std::ostream& os) const;
+  class VertexSE2;
 
   /**
-   * update the offset to a new value.
-   * re-calculates the different representations, e.g., the rotation matrix
+   * \brief offset for an SE2
    */
-  void setOffset(const SE2& offset_ = SE2());
+  class G2O_TYPES_SLAM2D_API ParameterSE2Offset: public Parameter
+  {
+    public:
+      EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+      ParameterSE2Offset();
 
-  const SE2& offset() const { return _offset; }
+      virtual bool read(std::istream& is);
+      virtual bool write(std::ostream& os) const;
 
-  //! rotation of the offset as 2x2 rotation matrix
-  const Isometry2& offsetMatrix() const { return _offsetMatrix; }
+      /**
+       * update the offset to a new value.
+       * re-calculates the different representations, e.g., the rotation matrix
+       */
+      void setOffset(const SE2& offset_ = SE2());
 
-  //! rotation of the inverse offset as 2x2 rotation matrix
-  const Isometry2& inverseOffsetMatrix() const { return _inverseOffsetMatrix; }
+      const SE2& offset() const { return _offset;}
 
- protected:
-  SE2 _offset;
-  Isometry2 _offsetMatrix;
-  Isometry2 _inverseOffsetMatrix;
-};
+      //! rotation of the offset as 2x2 rotation matrix
+      const Isometry2D& offsetMatrix() const { return _offsetMatrix;}
 
-/**
- * \brief caching the offset related to a vertex
- */
-class G2O_TYPES_SLAM2D_API CacheSE2Offset : public Cache {
- public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-  CacheSE2Offset();
-  virtual void updateImpl();
+      //! rotation of the inverse offset as 2x2 rotation matrix
+      const Isometry2D& inverseOffsetMatrix() const { return _inverseOffsetMatrix;}
 
-  const ParameterSE2Offset* offsetParam() const { return _offsetParam; }
-  void setOffsetParam(ParameterSE2Offset* offsetParam);
+    protected:
+      SE2 _offset;
+      Isometry2D _offsetMatrix;
+      Isometry2D _inverseOffsetMatrix;
+  };
 
-  const SE2& w2n() const { return _se2_w2n; }
-  const SE2& n2w() const { return _se2_n2w; }
+  /**
+   * \brief caching the offset related to a vertex
+   */
+  class G2O_TYPES_SLAM2D_API CacheSE2Offset: public Cache {
+    public:
+      EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+      CacheSE2Offset();
+      virtual void updateImpl();
 
-  const Isometry2& w2nMatrix() const { return _w2n; }
-  const Isometry2& n2wMatrix() const { return _n2w; }
-  const Isometry2& w2lMatrix() const { return _w2l; }
+      const ParameterSE2Offset* offsetParam() const { return _offsetParam;}
+      void setOffsetParam(ParameterSE2Offset* offsetParam);
 
-  const Matrix2 RpInverseRInverseMatrix() const { return _RpInverse_RInverse; }
-  const Matrix2 RpInverseRInversePrimeMatrix() const {
-    return _RpInverse_RInversePrime;
-  }
+      const SE2& w2n() const {return _se2_w2n;}
+      const SE2& n2w() const {return _se2_n2w;}
 
- protected:
-  ParameterSE2Offset* _offsetParam;  ///< the parameter connected to the cache
-  SE2 _se2_w2n;
-  SE2 _se2_n2w;
+      const Isometry2D& w2nMatrix() const { return _w2n;}
+      const Isometry2D& n2wMatrix() const { return _n2w;}
+      const Isometry2D& w2lMatrix() const { return _w2l;}
 
-  Isometry2 _w2n;  ///< world to sensor transform
-  Isometry2 _w2l;  ///< world to local
-  Isometry2 _n2w;  ///< sensor to world
-  Matrix2 _RpInverse_RInverse;
-  Matrix2 _RpInverse_RInversePrime;
+      const Matrix2D RpInverseRInverseMatrix() const { return _RpInverse_RInverse; }
+      const Matrix2D RpInverseRInversePrimeMatrix() const { return _RpInverse_RInversePrime; }
 
- protected:
-  virtual bool resolveDependancies();
-};
+    protected:
+      ParameterSE2Offset* _offsetParam; ///< the parameter connected to the cache
+      SE2 _se2_w2n;
+      SE2 _se2_n2w;
 
-}  // namespace g2o
+      Isometry2D _w2n; ///< world to sensor transform
+      Isometry2D _w2l; ///< world to local
+      Isometry2D _n2w; ///< sensor to world
+      Matrix2D _RpInverse_RInverse;
+      Matrix2D _RpInverse_RInversePrime;
+      
+    protected:
+      virtual bool resolveDependancies();
+      
+  };
+
+}
 
 #endif

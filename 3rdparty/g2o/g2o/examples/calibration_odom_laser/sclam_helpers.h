@@ -31,15 +31,13 @@
 
 namespace g2o {
 
-class SparseOptimizer;
-class DataQueue;
+  class SparseOptimizer;
+  class DataQueue;
 
-G2O_CALIBRATION_ODOM_LASER_API void addOdometryCalibLinksDifferential(
-    SparseOptimizer& optimizer, const DataQueue& odomData);
+  G2O_CALIBRATION_ODOM_LASER_API void addOdometryCalibLinksDifferential(SparseOptimizer& optimizer, const DataQueue& odomData);
 
-G2O_CALIBRATION_ODOM_LASER_API void allocateSolverForSclam(
-    SparseOptimizer& optimizer, bool levenberg = false);
+  G2O_CALIBRATION_ODOM_LASER_API void allocateSolverForSclam(SparseOptimizer& optimizer, bool levenberg = false);
 
-}  // namespace g2o
+} // end namespace
 
 #endif

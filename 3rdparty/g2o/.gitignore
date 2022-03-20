@@ -1,5 +1,3 @@
-\build*
-\lib
-\bin
-\.vs
-\.vscode
+build*
+lib
+bin

@@ -1,17 +1,14 @@
-add_subdirectory(g2o_cli)
+ADD_SUBDIRECTORY(g2o_cli)
+ADD_SUBDIRECTORY(g2o_hierarchical)
 
-if (G2O_BUILD_SLAM3D_TYPES)
-  add_subdirectory(g2o_hierarchical)
-endif()
+IF (G2O_HAVE_OPENGL)
+  ADD_SUBDIRECTORY(g2o_simulator)
+ENDIF()
 
-if (G2O_HAVE_OPENGL AND G2O_BUILD_SLAM2D_TYPES  AND G2O_BUILD_SLAM3D_TYPES)
-  add_subdirectory(g2o_simulator)
-endif()
+IF(QGLVIEWER_FOUND AND (Qt4_FOUND OR Qt5_FOUND) )
+  ADD_SUBDIRECTORY(g2o_viewer)
+ENDIF()
 
-if(QGLVIEWER_FOUND AND Qt5_FOUND)
-  add_subdirectory(g2o_viewer)
-endif()
-
-if(G2O_BUILD_LINKED_APPS AND G2O_BUILD_SBA_TYPES AND G2O_BUILD_SCLAM2D_TYPES)
-  add_subdirectory(linked_binaries)
-endif()
+IF(G2O_BUILD_LINKED_APPS)
+  ADD_SUBDIRECTORY(linked_binaries)
+ENDIF()

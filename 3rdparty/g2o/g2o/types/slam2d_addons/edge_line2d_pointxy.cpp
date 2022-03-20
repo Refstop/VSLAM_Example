@@ -26,56 +26,70 @@
 
 #include "edge_line2d_pointxy.h"
 
+#ifdef WINDOWS
+#include <windows.h>
+#endif
+
+#ifdef G2O_HAVE_OPENGL
+#ifdef __APPLE__
+#include <OpenGL/gl.h>
+#else
+#include <GL/gl.h>
+#endif
+#endif
+
 namespace g2o {
 
-EdgeLine2DPointXY::EdgeLine2DPointXY()
-    : BaseBinaryEdge<1, number_t, VertexLine2D, VertexPointXY>() {}
+  EdgeLine2DPointXY::EdgeLine2DPointXY() :
+    BaseBinaryEdge<1, double, VertexLine2D, VertexPointXY>()
+  {
+  }
 
-bool EdgeLine2DPointXY::read(std::istream& is) {
-  is >> _measurement;
-  is >> information()(0, 0);
-  return true;
-}
+  bool EdgeLine2DPointXY::read(std::istream& is)
+  {
+    is >> _measurement;
+    is >> information()(0,0);
+    return true;
+  }
 
-bool EdgeLine2DPointXY::write(std::ostream& os) const {
-  os << measurement() << " ";
-  os << information()(0, 0);
-  return os.good();
-}
+  bool EdgeLine2DPointXY::write(std::ostream& os) const
+  {
+    os << measurement() << " ";
+    os << information()(0,0);
+    return os.good();
+  }
 
-// void EdgeLine2DPointXY::initialEstimate(const OptimizableGraph::VertexSet&
-// from, OptimizableGraph::Vertex* to)
-// {
-//   assert(from.size() == 1 && from.count(_vertices[0]) == 1 && "Can not
-//   initialize VertexLine2D position by VertexPointXY");
+  // void EdgeLine2DPointXY::initialEstimate(const OptimizableGraph::VertexSet& from, OptimizableGraph::Vertex* to)
+  // {
+  //   assert(from.size() == 1 && from.count(_vertices[0]) == 1 && "Can not initialize VertexLine2D position by VertexPointXY");
 
-//   VertexLine2D* vi     = static_cast<VertexLine2D*>(_vertices[0]);
-//   VertexPointXY* vj = static_cast<VertexPointXY*>(_vertices[1]);
-//   if (from.count(vi) > 0 && to == vj) {
-//     Line2D T=vi->estimate();
-//     Vector2 est=_measurement;
-//     est[0] += T.rotation().angle();
-//     est[0] = normalize_theta(est[0]);
-//     Vector2 n(cos(est[0]), sin(est[0]));
-//     est[1] += n.dot(T.translation());
-//     vj->setEstimate(est);
-//   }
-// }
+  //   VertexLine2D* vi     = static_cast<VertexLine2D*>(_vertices[0]);
+  //   VertexPointXY* vj = static_cast<VertexPointXY*>(_vertices[1]);
+  //   if (from.count(vi) > 0 && to == vj) {
+  //     Line2D T=vi->estimate();
+  //     Vector2D est=_measurement;
+  //     est[0] += T.rotation().angle();
+  //     est[0] = normalize_theta(est[0]);
+  //     Vector2D n(cos(est[0]), sin(est[0]));
+  //     est[1] += n.dot(T.translation());
+  //     vj->setEstimate(est);
+  //   }
+  // }
 
 // #ifndef NUMERIC_JACOBIAN_TWO_D_TYPES
 //   void EdgeLine2DPointXY::linearizeOplus()
 //   {
-//     const VertexLine2D* vi     = static_cast<const
-//     VertexLine2D*>(_vertices[0]); const VertexPointXY* vj = static_cast<const
-//     VertexPointXY*>(_vertices[1]); const number_t& x1        =
-//     vi->estimate().translation()[0]; const number_t& y1        =
-//     vi->estimate().translation()[1]; const number_t& th1       =
-//     vi->estimate().rotation().angle(); const number_t& x2        =
-//     vj->estimate()[0]; const number_t& y2        = vj->estimate()[1];
+//     const VertexLine2D* vi     = static_cast<const VertexLine2D*>(_vertices[0]);
+//     const VertexPointXY* vj = static_cast<const VertexPointXY*>(_vertices[1]);
+//     const double& x1        = vi->estimate().translation()[0];
+//     const double& y1        = vi->estimate().translation()[1];
+//     const double& th1       = vi->estimate().rotation().angle();
+//     const double& x2        = vj->estimate()[0];
+//     const double& y2        = vj->estimate()[1];
 
-//     number_t aux_1 = cos(th1) ;
-//     number_t aux_2 = -aux_1 ;
-//     number_t aux_3 = sin(th1) ;
+//     double aux_1 = cos(th1) ;
+//     double aux_2 = -aux_1 ;
+//     double aux_3 = sin(th1) ;
 
 //     _jacobianOplusXi( 0 , 0 ) = aux_2 ;
 //     _jacobianOplusXi( 0 , 1 ) = -aux_3 ;
@@ -91,43 +105,34 @@ bool EdgeLine2DPointXY::write(std::ostream& os) const {
 //   }
 // #endif
 
-//   EdgeLine2DPointXYWriteGnuplotAction::EdgeLine2DPointXYWriteGnuplotAction():
-//   WriteGnuplotAction(typeid(EdgeLine2DPointXY).name()){}
+//   EdgeLine2DPointXYWriteGnuplotAction::EdgeLine2DPointXYWriteGnuplotAction(): WriteGnuplotAction(typeid(EdgeLine2DPointXY).name()){}
 
-//   HyperGraphElementAction*
-//   EdgeLine2DPointXYWriteGnuplotAction::operator()(HyperGraph::HyperGraphElement*
-//   element, HyperGraphElementAction::Parameters* params_){
+//   HyperGraphElementAction* EdgeLine2DPointXYWriteGnuplotAction::operator()(HyperGraph::HyperGraphElement* element, HyperGraphElementAction::Parameters* params_){
 //     if (typeid(*element).name()!=_typeName)
-//       return nullptr;
-//     WriteGnuplotAction::Parameters*
-//     params=static_cast<WriteGnuplotAction::Parameters*>(params_); if
-//     (!params->os){
-//       std::cerr << __PRETTY_FUNCTION__ << ": warning, on valid os specified"
-//       << std::endl; return nullptr;
+//       return 0;
+//     WriteGnuplotAction::Parameters* params=static_cast<WriteGnuplotAction::Parameters*>(params_);
+//     if (!params->os){
+//       std::cerr << __PRETTY_FUNCTION__ << ": warning, on valid os specified" << std::endl;
+//       return 0;
 //     }
 
 //     EdgeLine2DPointXY* e =  static_cast<EdgeLine2DPointXY*>(element);
 //     VertexLine2D* fromEdge = static_cast<VertexLine2D*>(e->vertex(0));
 //     VertexPointXY* toEdge   = static_cast<VertexPointXY*>(e->vertex(1));
-//     *(params->os) << fromEdge->estimate().translation().x() << " " <<
-//     fromEdge->estimate().translation().y()
+//     *(params->os) << fromEdge->estimate().translation().x() << " " << fromEdge->estimate().translation().y()
 //       << " " << fromEdge->estimate().rotation().angle() << std::endl;
-//     *(params->os) << toEdge->estimate().x() << " " << toEdge->estimate().y()
-//     << std::endl;
+//     *(params->os) << toEdge->estimate().x() << " " << toEdge->estimate().y() << std::endl;
 //     *(params->os) << std::endl;
 //     return this;
 //   }
 
 // #ifdef G2O_HAVE_OPENGL
-//   EdgeLine2DPointXYDrawAction::EdgeLine2DPointXYDrawAction():
-//   DrawAction(typeid(EdgeLine2DPointXY).name()){}
+//   EdgeLine2DPointXYDrawAction::EdgeLine2DPointXYDrawAction(): DrawAction(typeid(EdgeLine2DPointXY).name()){}
 
-//   HyperGraphElementAction*
-//   EdgeLine2DPointXYDrawAction::operator()(HyperGraph::HyperGraphElement*
-//   element,
+//   HyperGraphElementAction* EdgeLine2DPointXYDrawAction::operator()(HyperGraph::HyperGraphElement* element,
 //                 HyperGraphElementAction::Parameters*  params_){
 //     if (typeid(*element).name()!=_typeName)
-//       return nullptr;
+//       return 0;
 
 //     refreshPropertyPtrs(params_);
 //     if (! _previousParams)
@@ -135,6 +140,7 @@ bool EdgeLine2DPointXY::write(std::ostream& os) const {
 
 //     if (_show && !_show->value())
 //       return this;
+
 
 //     EdgeLine2DPointXY* e =  static_cast<EdgeLine2DPointXY*>(element);
 //     VertexLine2D* fromEdge = static_cast<VertexLine2D*>(e->vertex(0));
@@ -151,4 +157,4 @@ bool EdgeLine2DPointXY::write(std::ostream& os) const {
 //   }
 // #endif
 
-}  // namespace g2o
+} // end namespace

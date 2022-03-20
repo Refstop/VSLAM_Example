@@ -25,20 +25,33 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "vertex_se3_euler.h"
-
 #include "g2o/types/slam3d/isometry3d_mappings.h"
 
-namespace g2o {
+#include <iostream>
 
-bool VertexSE3Euler::read(std::istream& is) {
-  Vector6 est;
-  bool state = internal::readVector(is, est);
-  setEstimate(internal::fromVectorET(est));
-  return state;
-}
+using namespace Eigen;
 
-bool VertexSE3Euler::write(std::ostream& os) const {
-  return internal::writeVector(os, internal::toVectorET(estimate()));
-}
+namespace g2o
+{
 
-}  // namespace g2o
+  bool VertexSE3Euler::read(std::istream& is)
+  {
+
+    Vector6d est;
+    for (int i=0; i<6; i++)
+      is  >> est[i];
+    Isometry3D transf= g2o::internal::fromVectorET(est);
+    setEstimate(transf);
+    updateCache();
+    return true;
+  }
+
+  bool VertexSE3Euler::write(std::ostream& os) const
+  {
+    Vector6d est =  g2o::internal::toVectorET(estimate());
+    for (int i=0; i<6; i++)
+      os << est[i] << " ";
+    return os.good();
+  }
+
+} // end namespace
