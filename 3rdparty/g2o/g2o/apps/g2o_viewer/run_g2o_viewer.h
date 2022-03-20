@@ -24,19 +24,23 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#ifndef RUN_G2O_VIEWER_H
+#define RUN_G2O_VIEWER_H
+
 #include "g2o_viewer_api.h"
 
 namespace g2o {
 
-  class CommandArgs;
+class CommandArgs;
 
-  /**
-   * \brief wrapper for running the g2o viewer
-   */
-  class G2O_VIEWER_API RunG2OViewer
-  {
-    public:
-      static int run(int argc, char** argv, CommandArgs& arg);
-  };
+/**
+ * \brief wrapper for running the g2o viewer
+ */
+class G2O_VIEWER_API RunG2OViewer {
+ public:
+  static int run(int argc, char** argv, CommandArgs& arg);
+};
 
-} // end namespace
+}  // namespace g2o
+
+#endif
