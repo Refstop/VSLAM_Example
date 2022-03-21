@@ -73,10 +73,16 @@ int main( int argc, char** argv )
 
     // 그래프 최적화 빌드, 먼저 g2o 설정
     typedef g2o::BlockSolver< g2o::BlockSolverTraits<3,1> > Block;  // 각 오차항 최적화 변수의 차원은 3이고 오차값의 차원은 1
-    Block::LinearSolverType* linearSolver = new g2o::LinearSolverDense<Block::PoseMatrixType>(); // 선형 방정식 솔버
-    Block* solver_ptr = new Block( linearSolver );      // 행렬 블록 솔버
+    // old
+    // Block::LinearSolverType* linearSolver = new g2o::LinearSolverDense<Block::PoseMatrixType>(); // 선형 방정식 솔버
+    // Block* solver_ptr = new Block( linearSolver );      // 행렬 블록 솔버
+    // new
+    std::unique_ptr<Block::LinearSolverType> linearSolver (new g2o::LinearSolverDense<Block::PoseMatrixType>()); // 선형 방정식 솔버
+    std::unique_ptr<Block> solver_ptr (new Block(std::move(linearSolver))); // 행렬 블록 솔버
+
     // 경사하강법, GN, LM, DogLeg 중에서 선택
-    g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg( solver_ptr );
+    g2o::OptimizationAlgorithmLevenberg * solver = new g2o::OptimizationAlgorithmLevenberg(std::move(solver_ptr));
+    // g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg( solver_ptr );
     // g2o::OptimizationAlgorithmGaussNewton* solver = new g2o::OptimizationAlgorithmGaussNewton( solver_ptr );
     // g2o::OptimizationAlgorithmDogleg* solver = new g2o::OptimizationAlgorithmDogleg( solver_ptr );
     g2o::SparseOptimizer optimizer;     // 그래프 모델
