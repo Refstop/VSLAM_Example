@@ -25,7 +25,7 @@ void find_feature_matches(
   std::vector<KeyPoint> &keypoints_2,
   std::vector<DMatch> &matches);
 
-// 像素坐标转相机归一化坐标
+// 카메라 정규화 좌표에 대한 픽셀 좌표
 Point2d pixel2cam(const Point2d &p, const Mat &K);
 
 void pose_estimation_3d3d(
@@ -94,18 +94,18 @@ int main(int argc, char **argv) {
     cout << "usage: pose_estimation_3d3d img1 img2 depth1 depth2" << endl;
     return 1;
   }
-  //-- 读取图像
+  //-- 이미지 읽기
   Mat img_1 = imread(argv[1], CV_LOAD_IMAGE_COLOR);
   Mat img_2 = imread(argv[2], CV_LOAD_IMAGE_COLOR);
 
   vector<KeyPoint> keypoints_1, keypoints_2;
   vector<DMatch> matches;
   find_feature_matches(img_1, img_2, keypoints_1, keypoints_2, matches);
-  cout << "一共找到了" << matches.size() << "组匹配点" << endl;
+  cout << "총 발견수: " << matches.size() << "그룹 매치 포인트" << endl;
 
-  // 建立3D点
-  Mat depth1 = imread(argv[3], CV_LOAD_IMAGE_UNCHANGED);       // 深度图为16位无符号数，单通道图像
-  Mat depth2 = imread(argv[4], CV_LOAD_IMAGE_UNCHANGED);       // 深度图为16位无符号数，单通道图像
+  // 3D 포인트 구축
+  Mat depth1 = imread(argv[3], CV_LOAD_IMAGE_UNCHANGED);       // 깊이 맵은 16비트 무부호 숫자, 단일 채널 이미지
+  Mat depth2 = imread(argv[4], CV_LOAD_IMAGE_UNCHANGED);       // 깊이 맵은 16비트 무부호 숫자, 단일 채널 이미지
   Mat K = (Mat_<double>(3, 3) << 520.9, 0, 325.1, 0, 521.0, 249.7, 0, 0, 1);
   vector<Point3f> pts1, pts2;
 
@@ -150,7 +150,7 @@ void find_feature_matches(const Mat &img_1, const Mat &img_2,
                           std::vector<KeyPoint> &keypoints_1,
                           std::vector<KeyPoint> &keypoints_2,
                           std::vector<DMatch> &matches) {
-  //-- 初始化
+  //-- 초기화
   Mat descriptors_1, descriptors_2;
   // used in OpenCV3
   Ptr<FeatureDetector> detector = ORB::create();
@@ -159,23 +159,23 @@ void find_feature_matches(const Mat &img_1, const Mat &img_2,
   // Ptr<FeatureDetector> detector = FeatureDetector::create ( "ORB" );
   // Ptr<DescriptorExtractor> descriptor = DescriptorExtractor::create ( "ORB" );
   Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce-Hamming");
-  //-- 第一步:检测 Oriented FAST 角点位置
+  //-- 1단계: 지향된 FAST 코너 위치 감지
   detector->detect(img_1, keypoints_1);
   detector->detect(img_2, keypoints_2);
 
-  //-- 第二步:根据角点位置计算 BRIEF 描述子
+  //-- 2단계: 모서리 위치를 기반으로 BRIEF 설명자 계산
   descriptor->compute(img_1, keypoints_1, descriptors_1);
   descriptor->compute(img_2, keypoints_2, descriptors_2);
 
-  //-- 第三步:对两幅图像中的BRIEF描述子进行匹配，使用 Hamming 距离
+  //-- 3단계: 해밍 거리를 사용하여 두 이미지의 간략한 설명자를 일치시킵니다.
   vector<DMatch> match;
   // BFMatcher matcher ( NORM_HAMMING );
   matcher->match(descriptors_1, descriptors_2, match);
 
-  //-- 第四步:匹配点对筛选
+  //-- 4단계: 매치 포인트 쌍 필터링
   double min_dist = 10000, max_dist = 0;
 
-  //找出所有匹配之间的最小距离和最大距离, 即是最相似的和最不相似的两组点之间的距离
+  // 모든 일치 항목 사이의 최소 및 최대 거리, 즉 가장 유사한 점 집합과 가장 유사한 점 집합 사이의 거리를 찾습니다.
   for (int i = 0; i < descriptors_1.rows; i++) {
     double dist = match[i].distance;
     if (dist < min_dist) min_dist = dist;
@@ -185,7 +185,8 @@ void find_feature_matches(const Mat &img_1, const Mat &img_2,
   printf("-- Max dist : %f \n", max_dist);
   printf("-- Min dist : %f \n", min_dist);
 
-  //当描述子之间的距离大于两倍的最小距离时,即认为匹配有误.但有时候最小距离会非常小,设置一个经验值30作为下限.
+  // 디스크립터 사이의 거리가 최소 거리의 2배 이상이면 매칭이 잘못된 것으로 간주되지만
+  // 때로는 최소 거리가 매우 작아 경험적 값 30을 하한으로 설정합니다.
   for (int i = 0; i < descriptors_1.rows; i++) {
     if (match[i].distance <= max(2 * min_dist, 30.0)) {
       matches.push_back(match[i]);
@@ -251,15 +252,15 @@ void bundleAdjustment(
   const vector<Point3f> &pts1,
   const vector<Point3f> &pts2,
   Mat &R, Mat &t) {
-  // 构建图优化，先设定g2o
+  // 그래프 최적화 빌드, 먼저 g2o 설정
   typedef g2o::BlockSolverX BlockSolverType;
-  typedef g2o::LinearSolverDense<BlockSolverType::PoseMatrixType> LinearSolverType; // 线性求解器类型
-  // 梯度下降方法，可以从GN, LM, DogLeg 中选
+  typedef g2o::LinearSolverDense<BlockSolverType::PoseMatrixType> LinearSolverType; // 선형 솔버 유형
+  // 경사하강법, GN, LM, DogLeg 중에서 선택할 수 있습니다.
   auto solver = new g2o::OptimizationAlgorithmLevenberg(
     g2o::make_unique<BlockSolverType>(g2o::make_unique<LinearSolverType>()));
-  g2o::SparseOptimizer optimizer;     // 图模型
-  optimizer.setAlgorithm(solver);   // 设置求解器
-  optimizer.setVerbose(true);       // 打开调试输出
+  g2o::SparseOptimizer optimizer;     // 그래프 모델
+  optimizer.setAlgorithm(solver);   // 솔버 설정
+  optimizer.setVerbose(true);       // 디버그 출력 켜기
 
   // vertex
   VertexPose *pose = new VertexPose(); // camera pose
