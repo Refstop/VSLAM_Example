@@ -96,7 +96,7 @@ public:
 };
 
 class EdgeProjection :
-    public g2o::BaseBinaryEdge<2, Vector2d, VertexPoseAndIntrinsics, VertexPoint> {
+    public g2o::BaseBinaryEdge<2, Vector2d, VertexPoseAndIntrinsics, VertexPoint> { // edge의 생김새
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
@@ -138,8 +138,13 @@ void SolveBA(BALProblem &bal_problem) {
     const int camera_block_size = bal_problem.camera_block_size();
     double *points = bal_problem.mutable_points();
     double *cameras = bal_problem.mutable_cameras();
+    cout << "point_block_size: " << point_block_size << endl;
+    cout << "camera_block_size: " << camera_block_size << endl;
+    cout << "*point: " << *point << endl;
+    cout << "*camera: " << *camera << endl;
 
-    // pose dimension 9, landmark is 3
+
+    // pose dimension 9(x,y,z,r,p,y,f,k1,k2), landmark is 3(x,y,z)
     typedef g2o::BlockSolver<g2o::BlockSolverTraits<9, 3>> BlockSolverType;
     typedef g2o::LinearSolverCSparse<BlockSolverType::PoseMatrixType> LinearSolverType;
     // use LM
@@ -147,7 +152,7 @@ void SolveBA(BALProblem &bal_problem) {
         g2o::make_unique<BlockSolverType>(g2o::make_unique<LinearSolverType>()));
     g2o::SparseOptimizer optimizer;
     optimizer.setAlgorithm(solver);
-    optimizer.setVerbose(true);
+    optimizer.setVerbose(false);
 
     /// build g2o problem
     const double *observations = bal_problem.observations();
@@ -155,13 +160,14 @@ void SolveBA(BALProblem &bal_problem) {
     vector<VertexPoseAndIntrinsics *> vertex_pose_intrinsics;
     vector<VertexPoint *> vertex_points;
     for (int i = 0; i < bal_problem.num_cameras(); ++i) {
-        VertexPoseAndIntrinsics *v = new VertexPoseAndIntrinsics();
-        double *camera = cameras + camera_block_size * i;
-        v->setId(i);
-        v->setEstimate(PoseAndIntrinsics(camera));
+        VertexPoseAndIntrinsics *v = new VertexPoseAndIntrinsics(); // 카메라 자세와 내부 파라미터 vertex
+        double *camera = cameras + camera_block_size * i; // ??
+        v->setId(i); // 몇번 카메라인가
+        v->setEstimate(PoseAndIntrinsics(camera)); // 
         optimizer.addVertex(v);
         vertex_pose_intrinsics.push_back(v);
     }
+
     for (int i = 0; i < bal_problem.num_points(); ++i) {
         VertexPoint *v = new VertexPoint();
         double *point = points + point_block_size * i;
@@ -176,12 +182,12 @@ void SolveBA(BALProblem &bal_problem) {
     // edge
     for (int i = 0; i < bal_problem.num_observations(); ++i) {
         EdgeProjection *edge = new EdgeProjection;
-        edge->setVertex(0, vertex_pose_intrinsics[bal_problem.camera_index()[i]]);
-        edge->setVertex(1, vertex_points[bal_problem.point_index()[i]]);
-        edge->setMeasurement(Vector2d(observations[2 * i + 0], observations[2 * i + 1]));
-        edge->setInformation(Matrix2d::Identity());
+        edge->setVertex(0, vertex_pose_intrinsics[bal_problem.camera_index()[i]]); // edge 화살표 출발
+        edge->setVertex(1, vertex_points[bal_problem.point_index()[i]]); // edge 화살표 도착
+        edge->setMeasurement(Vector2d(observations[2 * i + 0], observations[2 * i + 1])); // 관측값 저장
+        edge->setInformation(Matrix2d::Identity()); // information matrix, 정보행렬(공분산과 비슷한 역할)
         edge->setRobustKernel(new g2o::RobustKernelHuber());
-        optimizer.addEdge(edge);
+        optimizer.addEdge(edge); // 엣지 추가, reprojection error는 edgeprojection 클래스 안에 computeerror 함수에서 담당
     }
 
     optimizer.initializeOptimization();
