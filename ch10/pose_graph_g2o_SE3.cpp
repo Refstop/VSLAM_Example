@@ -10,10 +10,10 @@
 using namespace std;
 
 /************************************************
- * 本程序演示如何用g2o solver进行位姿图优化
- * sphere.g2o是人工生成的一个Pose graph，我们来优化它。
- * 尽管可以直接通过load函数读取整个图，但我们还是自己来实现读取代码，以期获得更深刻的理解
- * 这里使用g2o/types/slam3d/中的SE3表示位姿，它实质上是四元数而非李代数.
+  * 이 프로그램은 포즈 그래프 최적화를 위해 g2o 솔버를 사용하는 방법을 보여줍니다.
+  * sphere.g2o는 인위적으로 생성된 포즈 그래프이므로 최적화해 보겠습니다.
+  * 전체 그래프는 load 함수를 통해 직접 읽을 수 있지만 더 깊은 이해를 위해 읽기 코드를 직접 구현합니다.
+  * 여기서 g2o/types/slam3d/의 SE3는 포즈를 나타내는 데 사용되며, 이는 본질적으로 lie 대수가 아니라 쿼터니언입니다.
  * **********************************************/
 
 int main(int argc, char **argv) {
@@ -27,21 +27,21 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    // 设定g2o
+    // g2o 설정
     typedef g2o::BlockSolver<g2o::BlockSolverTraits<6, 6>> BlockSolverType;
     typedef g2o::LinearSolverEigen<BlockSolverType::PoseMatrixType> LinearSolverType;
     auto solver = new g2o::OptimizationAlgorithmLevenberg(
         g2o::make_unique<BlockSolverType>(g2o::make_unique<LinearSolverType>()));
-    g2o::SparseOptimizer optimizer;     // 图模型
-    optimizer.setAlgorithm(solver);   // 设置求解器
-    optimizer.setVerbose(true);       // 打开调试输出
+    g2o::SparseOptimizer optimizer;     // 그래프 모델
+    optimizer.setAlgorithm(solver);   // 솔버 설정
+    optimizer.setVerbose(true);       // 디버그 출력 설정
 
-    int vertexCnt = 0, edgeCnt = 0; // 顶点和边的数量
+    int vertexCnt = 0, edgeCnt = 0; // vertex와 edge의 수
     while (!fin.eof()) {
         string name;
         fin >> name;
         if (name == "VERTEX_SE3:QUAT") {
-            // SE3 顶点
+            // SE3 vertex
             g2o::VertexSE3 *v = new g2o::VertexSE3();
             int index = 0;
             fin >> index;
@@ -52,9 +52,9 @@ int main(int argc, char **argv) {
             if (index == 0)
                 v->setFixed(true);
         } else if (name == "EDGE_SE3:QUAT") {
-            // SE3-SE3 边
+            // SE3-SE3 edge
             g2o::EdgeSE3 *e = new g2o::EdgeSE3();
-            int idx1, idx2;     // 关联的两个顶点
+            int idx1, idx2;     // 연결된 두 vertex
             fin >> idx1 >> idx2;
             e->setId(edgeCnt++);
             e->setVertex(0, optimizer.vertices()[idx1]);

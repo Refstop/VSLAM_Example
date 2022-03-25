@@ -104,7 +104,7 @@ public:
         auto v0 = (VertexPoseAndIntrinsics *) _vertices[0];
         auto v1 = (VertexPoint *) _vertices[1];
         auto proj = v0->project(v1->estimate());
-        _error = proj - _measurement;
+        _error = proj - _measurement; // 
     }
 
     // use numeric derivatives
@@ -124,6 +124,7 @@ int main(int argc, char **argv) {
     }
 
     BALProblem bal_problem(argv[1]);
+    cout << endl;
     bal_problem.Normalize();
     bal_problem.Perturb(0.1, 0.5, 0.5);
     bal_problem.WriteToPLYFile("initial.ply");
@@ -134,22 +135,19 @@ int main(int argc, char **argv) {
 }
 
 void SolveBA(BALProblem &bal_problem) {
-    const int point_block_size = bal_problem.point_block_size();
-    const int camera_block_size = bal_problem.camera_block_size();
-    double *points = bal_problem.mutable_points();
-    double *cameras = bal_problem.mutable_cameras();
-    cout << "point_block_size: " << point_block_size << endl;
-    cout << "camera_block_size: " << camera_block_size << endl;
-    cout << "*point: " << *point << endl;
-    cout << "*camera: " << *camera << endl;
+    const int point_block_size = bal_problem.point_block_size(); // 랜드마크 차원, 3
+    const int camera_block_size = bal_problem.camera_block_size(); // 카메라 포즈 차원, 9
+    double *points = bal_problem.mutable_points(); // 랜드마크의 정보가 저장된 배열의 시작 주소
+    double *cameras = bal_problem.mutable_cameras(); // 카메라 포즈의 정보가 저장된 배열의 시작 주소
+    cout << "bal_problem.num_cameras(): " << bal_problem.num_cameras() << endl;
 
 
     // pose dimension 9(x,y,z,r,p,y,f,k1,k2), landmark is 3(x,y,z)
-    typedef g2o::BlockSolver<g2o::BlockSolverTraits<9, 3>> BlockSolverType;
-    typedef g2o::LinearSolverCSparse<BlockSolverType::PoseMatrixType> LinearSolverType;
+    typedef g2o::BlockSolver<g2o::BlockSolverTraits<9, 3>> BlockSolverType; // 블록 솔버
+    typedef g2o::LinearSolverCSparse<BlockSolverType::PoseMatrixType> LinearSolverType; // 선형 솔버
     // use LM
     auto solver = new g2o::OptimizationAlgorithmLevenberg(
-        g2o::make_unique<BlockSolverType>(g2o::make_unique<LinearSolverType>()));
+        g2o::make_unique<BlockSolverType>(g2o::make_unique<LinearSolverType>())); // optimizer 솔버로서 LM지정
     g2o::SparseOptimizer optimizer;
     optimizer.setAlgorithm(solver);
     optimizer.setVerbose(false);
@@ -160,17 +158,17 @@ void SolveBA(BALProblem &bal_problem) {
     vector<VertexPoseAndIntrinsics *> vertex_pose_intrinsics;
     vector<VertexPoint *> vertex_points;
     for (int i = 0; i < bal_problem.num_cameras(); ++i) {
-        VertexPoseAndIntrinsics *v = new VertexPoseAndIntrinsics(); // 카메라 자세와 내부 파라미터 vertex
-        double *camera = cameras + camera_block_size * i; // ??
+        VertexPoseAndIntrinsics *v = new VertexPoseAndIntrinsics(); // 카메라 자세와 내부 파라미터(줄여서 내파) vertex
+        double *camera = cameras + camera_block_size * i; // 카메라 포즈&내파가 저장된 배열의 주소
         v->setId(i); // 몇번 카메라인가
-        v->setEstimate(PoseAndIntrinsics(camera)); // 
+        v->setEstimate(PoseAndIntrinsics(camera)); // camera: 카메라 포즈&내파(x,y,z,r,p,y,f,k1,k2)
         optimizer.addVertex(v);
         vertex_pose_intrinsics.push_back(v);
     }
 
     for (int i = 0; i < bal_problem.num_points(); ++i) {
         VertexPoint *v = new VertexPoint();
-        double *point = points + point_block_size * i;
+        double *point = points + point_block_size * i; // 랜드마크가 저장된 배열의 주소
         v->setId(i + bal_problem.num_cameras());
         v->setEstimate(Vector3d(point[0], point[1], point[2]));
         // g2o는 정점을 BA에서 Marg로 수동으로 설정해야 합니다.

@@ -17,15 +17,15 @@ using Sophus::SE3d;
 using Sophus::SO3d;
 
 /************************************************
- * 本程序演示如何用g2o solver进行位姿图优化
- * sphere.g2o是人工生成的一个Pose graph，我们来优化它。
- * 尽管可以直接通过load函数读取整个图，但我们还是自己来实现读取代码，以期获得更深刻的理解
- * 本节使用李代数表达位姿图，节点和边的方式为自定义
+  * 이 프로그램은 포즈 그래프 최적화를 위해 g2o 솔버를 사용하는 방법을 보여줍니다.
+  * sphere.g2o는 인위적으로 생성된 포즈 그래프이므로 최적화해 보겠습니다.
+  * 전체 그래프는 load 함수를 통해 직접 읽을 수 있지만 더 깊은 이해를 위해 읽기 코드를 직접 구현합니다.
+  * 이 섹션에서는 거짓말 대수학을 사용하여 포즈 그래프를 표현하며 노드와 가장자리의 방식은 사용자 정의입니다.
  * **********************************************/
 
 typedef Matrix<double, 6, 6> Matrix6d;
 
-// 给定误差求J_R^{-1}的近似
+// 주어진 오류에 대한 J_R^{-1}의 근사값 찾기
 Matrix6d JRInv(const SE3d &e) {
     Matrix6d J;
     J.block(0, 0, 3, 3) = SO3d::hat(e.so3().log());
@@ -37,7 +37,7 @@ Matrix6d JRInv(const SE3d &e) {
     return J;
 }
 
-// 李代数顶点
+// lie 대수 edge
 typedef Matrix<double, 6, 1> Vector6d;
 
 class VertexSE3LieAlgebra : public g2o::BaseVertex<6, SE3d> {
@@ -66,7 +66,7 @@ public:
         _estimate = SE3d();
     }
 
-    // 左乘更新
+    // 왼쪽 곱하기 업데이트
     virtual void oplusImpl(const double *update) override {
         Vector6d upd;
         upd << update[0], update[1], update[2], update[3], update[4], update[5];
@@ -74,7 +74,7 @@ public:
     }
 };
 
-// 两个李代数节点之边
+// 두 lie 대수 노드 사이의 edge
 class EdgeSE3LieAlgebra : public g2o::BaseBinaryEdge<6, SE3d, VertexSE3LieAlgebra, VertexSE3LieAlgebra> {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -113,19 +113,19 @@ public:
         return true;
     }
 
-    // 误差计算与书中推导一致
+    // 오류 계산은 책의 유도와 일치합니다.
     virtual void computeError() override {
         SE3d v1 = (static_cast<VertexSE3LieAlgebra *> (_vertices[0]))->estimate();
         SE3d v2 = (static_cast<VertexSE3LieAlgebra *> (_vertices[1]))->estimate();
         _error = (_measurement.inverse() * v1.inverse() * v2).log();
     }
 
-    // 雅可比计算
+    // 야코비안 계산
     virtual void linearizeOplus() override {
         SE3d v1 = (static_cast<VertexSE3LieAlgebra *> (_vertices[0]))->estimate();
         SE3d v2 = (static_cast<VertexSE3LieAlgebra *> (_vertices[1]))->estimate();
         Matrix6d J = JRInv(SE3d::exp(_error));
-        // 尝试把J近似为I？
+        // J를 I로 근사하려고 합니까?
         _jacobianOplusXi = -J * v2.inverse().Adj();
         _jacobianOplusXj = J * v2.inverse().Adj();
     }
@@ -147,11 +147,11 @@ int main(int argc, char **argv) {
     typedef g2o::LinearSolverEigen<BlockSolverType::PoseMatrixType> LinearSolverType;
     auto solver = new g2o::OptimizationAlgorithmLevenberg(
         g2o::make_unique<BlockSolverType>(g2o::make_unique<LinearSolverType>()));
-    g2o::SparseOptimizer optimizer;     // 图模型
-    optimizer.setAlgorithm(solver);   // 设置求解器
-    optimizer.setVerbose(true);       // 打开调试输出
+    g2o::SparseOptimizer optimizer;     // 그래프 모델
+    optimizer.setAlgorithm(solver);   // 솔버 설정
+    optimizer.setVerbose(true);       // 디버그 출력 켜기
 
-    int vertexCnt = 0, edgeCnt = 0; // 顶点和边的数量
+    int vertexCnt = 0, edgeCnt = 0; // 정점과 모서리의 수
 
     vector<VertexSE3LieAlgebra *> vectices;
     vector<EdgeSE3LieAlgebra *> edges;
@@ -159,7 +159,7 @@ int main(int argc, char **argv) {
         string name;
         fin >> name;
         if (name == "VERTEX_SE3:QUAT") {
-            // 顶点
+            // vertex
             VertexSE3LieAlgebra *v = new VertexSE3LieAlgebra();
             int index = 0;
             fin >> index;
@@ -171,9 +171,9 @@ int main(int argc, char **argv) {
             if (index == 0)
                 v->setFixed(true);
         } else if (name == "EDGE_SE3:QUAT") {
-            // SE3-SE3 边
+            // SE3-SE3 edge
             EdgeSE3LieAlgebra *e = new EdgeSE3LieAlgebra();
-            int idx1, idx2;     // 关联的两个顶点
+            int idx1, idx2;     // 연결된 두 정점
             fin >> idx1 >> idx2;
             e->setId(edgeCnt++);
             e->setVertex(0, optimizer.vertices()[idx1]);
@@ -193,8 +193,8 @@ int main(int argc, char **argv) {
 
     cout << "saving optimization results ..." << endl;
 
-    // 因为用了自定义顶点且没有向g2o注册，这里保存自己来实现
-    // 伪装成 SE3 顶点和边，让 g2o_viewer 可以认出
+    // 사용자 정의 정점이 g2o에 등록되지 않고 사용되기 때문에 구현하려면 여기에 저장하십시오.
+    // SE3 정점과 가장자리로 위장하여 g2o_viewer가 인식할 수 있도록 합니다.
     ofstream fout("result_lie.g2o");
     for (VertexSE3LieAlgebra *v:vectices) {
         fout << "VERTEX_SE3:QUAT ";
