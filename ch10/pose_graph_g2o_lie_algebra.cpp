@@ -20,7 +20,7 @@ using Sophus::SO3d;
   * 이 프로그램은 포즈 그래프 최적화를 위해 g2o 솔버를 사용하는 방법을 보여줍니다.
   * sphere.g2o는 인위적으로 생성된 포즈 그래프이므로 최적화해 보겠습니다.
   * 전체 그래프는 load 함수를 통해 직접 읽을 수 있지만 더 깊은 이해를 위해 읽기 코드를 직접 구현합니다.
-  * 이 섹션에서는 거짓말 대수학을 사용하여 포즈 그래프를 표현하며 노드와 가장자리의 방식은 사용자 정의입니다.
+  * 이 섹션에서는 lie 대수학을 사용하여 포즈 그래프를 표현하며 노드와 가장자리의 방식은 사용자 정의입니다.
  * **********************************************/
 
 typedef Matrix<double, 6, 6> Matrix6d;
@@ -142,7 +142,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    // 设定g2o
+    // g2o 설정
     typedef g2o::BlockSolver<g2o::BlockSolverTraits<6, 6>> BlockSolverType;
     typedef g2o::LinearSolverEigen<BlockSolverType::PoseMatrixType> LinearSolverType;
     auto solver = new g2o::OptimizationAlgorithmLevenberg(

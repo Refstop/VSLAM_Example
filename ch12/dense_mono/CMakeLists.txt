@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 project(dense_monocular)
 
 set(CMAKE_BUILD_TYPE "Release")
-set(CMAKE_CXX_FLAGS "-std=c++11 -march=native -O3")
+set(CMAKE_CXX_FLAGS "-std=c++14 -march=native -O3")
 
 ############### dependencies ######################
 # Eigen
@@ -19,4 +19,4 @@ set(THIRD_PARTY_LIBS
         ${Sophus_LIBRARIES})
 
 add_executable(dense_mapping dense_mapping.cpp)
-target_link_libraries(dense_mapping ${THIRD_PARTY_LIBS})
+target_link_libraries(dense_mapping ${THIRD_PARTY_LIBS} fmt)

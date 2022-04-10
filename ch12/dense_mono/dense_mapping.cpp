@@ -24,28 +24,28 @@ using namespace Eigen;
 using namespace cv;
 
 /**********************************************
-* 本程序演示了单目相机在已知轨迹下的稠密深度估计
-* 使用极线搜索 + NCC 匹配的方式，与书本的 12.2 节对应
-* 请注意本程序并不完美，你完全可以改进它——我其实在故意暴露一些问题(这是借口)。
+* 이 프로그램은 알려진 궤적을 가진 단안 카메라의 조밀한 깊이 추정을 보여줍니다.
+* 책의 섹션 12.2에 해당하는 polar search + NCC matching 방법 사용
+* 이 프로그램은 완벽하지 않습니다. 분명히 개선할 수 있습니다. 실제로 의도적으로 몇 가지 문제를 노출하고 있습니다(변명입니다).
 ***********************************************/
 
 // ------------------------------------------------------------------
 // parameters
-const int boarder = 20;         // 边缘宽度
-const int width = 640;          // 图像宽度
-const int height = 480;         // 图像高度
-const double fx = 481.2f;       // 相机内参
+const int boarder = 20;         // 가장자리 너비
+const int width = 640;          // 이미지 너비
+const int height = 480;         // 이미지 높이
+const double fx = 481.2f;       // 카메라 내부 매개변수
 const double fy = -480.0f;
 const double cx = 319.5f;
 const double cy = 239.5f;
-const int ncc_window_size = 3;    // NCC 取的窗口半宽度
-const int ncc_area = (2 * ncc_window_size + 1) * (2 * ncc_window_size + 1); // NCC窗口面积
-const double min_cov = 0.1;     // 收敛判定：最小方差
-const double max_cov = 10;      // 发散判定：最大方差
+const int ncc_window_size = 3;    // NCC에서 가져온 창의 절반 너비
+const int ncc_area = (2 * ncc_window_size + 1) * (2 * ncc_window_size + 1); // NCC 창 영역
+const double min_cov = 0.1;     // 수렴 판정: 최소 분산
+const double max_cov = 10;      // 발산 판정: 최대 분산
 
 // ------------------------------------------------------------------
-// 重要的函数
-/// 从 REMODE 数据集读取数据
+// 중요한 함수
+// REMODE 데이터셋에서 데이터 읽기
 bool readDatasetFiles(
     const string &path,
     vector<string> &color_image_files,
@@ -54,13 +54,14 @@ bool readDatasetFiles(
 );
 
 /**
- * 根据新的图像更新深度估计
- * @param ref           参考图像
- * @param curr          当前图像
- * @param T_C_R         参考图像到当前图像的位姿
- * @param depth         深度
- * @param depth_cov     深度方差
- * @return              是否成功
+ * 새 이미지를 기반으로 깊이 추정 업데이트
+ * 
+ * @param ref           참조 이미지
+ * @param curr          현재 이미지
+ * @param T_C_R         참조 이미지에서 현재 이미지까지의 포즈
+ * @param depth         깊이
+ * @param depth_cov     깊이 분산
+ * @return              성공 여부
  */
 bool update(
     const Mat &ref,
@@ -71,16 +72,17 @@ bool update(
 );
 
 /**
- * 极线搜索
- * @param ref           参考图像
- * @param curr          当前图像
- * @param T_C_R         位姿
- * @param pt_ref        参考图像中点的位置
- * @param depth_mu      深度均值
- * @param depth_cov     深度方差
- * @param pt_curr       当前点
- * @param epipolar_direction  极线方向
- * @return              是否成功
+ * 극지 탐색
+ * 
+ * @param ref           참조 이미지
+ * @param curr          현재 이미지
+ * @param T_C_R         포즈
+ * @param pt_ref        참조 이미지에서 점의 위치
+ * @param depth_mu      깊이 평균
+ * @param depth_cov     깊이 분산
+ * @param pt_curr       현재 지점
+ * @param epipolar_direction  에피폴라 라인의 방향?
+ * @return              성공 여부
  */
 bool epipolarSearch(
     const Mat &ref,
@@ -94,14 +96,14 @@ bool epipolarSearch(
 );
 
 /**
- * 更新深度滤波器
- * @param pt_ref    参考图像点
- * @param pt_curr   当前图像点
- * @param T_C_R     位姿
- * @param epipolar_direction 极线方向
- * @param depth     深度均值
- * @param depth_cov2    深度方向
- * @return          是否成功
+ * 깊이 필터 업데이트
+ * @param pt_ref    참조 이미지 포인트
+ * @param pt_curr   현재 이미지 포인트
+ * @param T_C_R     포즈
+ * @param epipolar_direction 에피폴라 라인의 방향?
+ * @param depth     깊이 평균
+ * @param depth_cov2    깊이 방향
+ * @return          성공 여부
  */
 bool updateDepthFilter(
     const Vector2d &pt_ref,
@@ -113,16 +115,16 @@ bool updateDepthFilter(
 );
 
 /**
- * 计算 NCC 评分
- * @param ref       参考图像
- * @param curr      当前图像
- * @param pt_ref    参考点
- * @param pt_curr   当前点
- * @return          NCC评分
+ * NCC 점수 계산
+ * @param ref       참조 이미지
+ * @param curr      현재 이미지
+ * @param pt_ref    기준점
+ * @param pt_curr   현재 지점
+ * @return          NCC 점수
  */
 double NCC(const Mat &ref, const Mat &curr, const Vector2d &pt_ref, const Vector2d &pt_curr);
 
-// 双线性灰度插值
+// 쌍선형 그레이스케일 보간
 inline double getBilinearInterpolatedValue(const Mat &img, const Vector2d &pt) {
     uchar *d = &img.data[int(pt(1, 0)) * img.step + int(pt(0, 0))];
     double xx = pt(0, 0) - floor(pt(0, 0));
@@ -134,11 +136,11 @@ inline double getBilinearInterpolatedValue(const Mat &img, const Vector2d &pt) {
 }
 
 // ------------------------------------------------------------------
-// 一些小工具
-// 显示估计的深度图
+// 일부 가젯
+// 예상 깊이 맵 표시
 void plotDepth(const Mat &depth_truth, const Mat &depth_estimate);
 
-// 像素到相机坐标系
+// 픽셀 대 카메라 좌표계
 inline Vector3d px2cam(const Vector2d px) {
     return Vector3d(
         (px(0, 0) - cx) / fx,
@@ -147,7 +149,7 @@ inline Vector3d px2cam(const Vector2d px) {
     );
 }
 
-// 相机坐标系到像素
+// 카메라 좌표계를 픽셀로
 inline Vector2d cam2px(const Vector3d p_cam) {
     return Vector2d(
         p_cam(0, 0) * fx / p_cam(2, 0) + cx,
@@ -155,20 +157,20 @@ inline Vector2d cam2px(const Vector3d p_cam) {
     );
 }
 
-// 检测一个点是否在图像边框内
+// 점이 이미지 블럭 안에 있는지 감지
 inline bool inside(const Vector2d &pt) {
     return pt(0, 0) >= boarder && pt(1, 0) >= boarder
            && pt(0, 0) + boarder < width && pt(1, 0) + boarder <= height;
 }
 
-// 显示极线匹配
+// 에피폴라 매치를 보여주다
 void showEpipolarMatch(const Mat &ref, const Mat &curr, const Vector2d &px_ref, const Vector2d &px_curr);
 
-// 显示极线
+// 에피폴라 라인 표시
 void showEpipolarLine(const Mat &ref, const Mat &curr, const Vector2d &px_ref, const Vector2d &px_min_curr,
                       const Vector2d &px_max_curr);
 
-/// 评测深度估计
+/// 깊이 추정 평가
 void evaludateDepth(const Mat &depth_truth, const Mat &depth_estimate);
 // ------------------------------------------------------------------
 
@@ -179,7 +181,7 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    // 从数据集读取数据
+    // 데이터세트에서 데이터 읽기
     vector<string> color_image_files;
     vector<SE3d> poses_TWC;
     Mat ref_depth;
@@ -190,20 +192,20 @@ int main(int argc, char **argv) {
     }
     cout << "read total " << color_image_files.size() << " files." << endl;
 
-    // 第一张图
+    // 첫 번째 사진
     Mat ref = imread(color_image_files[0], 0);                // gray-scale image
     SE3d pose_ref_TWC = poses_TWC[0];
-    double init_depth = 3.0;    // 深度初始值
-    double init_cov2 = 3.0;     // 方差初始值
-    Mat depth(height, width, CV_64F, init_depth);             // 深度图
-    Mat depth_cov2(height, width, CV_64F, init_cov2);         // 深度图方差
+    double init_depth = 3.0;    // 깊이 초기값
+    double init_cov2 = 3.0;     // 편차 초기값
+    Mat depth(height, width, CV_64F, init_depth);             // 깊이 맵
+    Mat depth_cov2(height, width, CV_64F, init_cov2);         // 깊이 맵 분산
 
     for (int index = 1; index < color_image_files.size(); index++) {
         cout << "*** loop " << index << " ***" << endl;
         Mat curr = imread(color_image_files[index], 0);
         if (curr.data == nullptr) continue;
         SE3d pose_curr_TWC = poses_TWC[index];
-        SE3d pose_T_C_R = pose_curr_TWC.inverse() * pose_ref_TWC;   // 坐标转换关系： T_C_W * T_W_R = T_C_R
+        SE3d pose_T_C_R = pose_curr_TWC.inverse() * pose_ref_TWC;   // 좌표 변환 관계： T_C_W * T_W_R = T_C_R
         update(ref, curr, pose_T_C_R, depth, depth_cov2);
         evaludateDepth(ref_depth, depth);
         plotDepth(ref_depth, depth);
@@ -227,7 +229,7 @@ bool readDatasetFiles(
     if (!fin) return false;
 
     while (!fin.eof()) {
-        // 数据格式：图像文件名 tx, ty, tz, qx, qy, qz, qw ，注意是 TWC 而非 TCW
+        // 데이터 형식: 이미지 파일 이름 tx, ty, tz, qx, qy, qz, qw , TCW가 아닌 TWC임을 유의하십시오.
         string image;
         fin >> image;
         double data[7];
@@ -256,14 +258,14 @@ bool readDatasetFiles(
     return true;
 }
 
-// 对整个深度图进行更新
+// 전체 깊이 맵 업데이트
 bool update(const Mat &ref, const Mat &curr, const SE3d &T_C_R, Mat &depth, Mat &depth_cov2) {
     for (int x = boarder; x < width - boarder; x++)
         for (int y = boarder; y < height - boarder; y++) {
-            // 遍历每个像素
-            if (depth_cov2.ptr<double>(y)[x] < min_cov || depth_cov2.ptr<double>(y)[x] > max_cov) // 深度已收敛或发散
+            // 각 픽셀에 대해 반복
+            if (depth_cov2.ptr<double>(y)[x] < min_cov || depth_cov2.ptr<double>(y)[x] > max_cov) // 깊이가 수렴하거나 발산했습니다.
                 continue;
-            // 在极线上搜索 (x,y) 的匹配
+            // 에피폴라 라인에서 (x,y) 일치 검색
             Vector2d pt_curr;
             Vector2d epipolar_direction;
             bool ret = epipolarSearch(
@@ -277,19 +279,19 @@ bool update(const Mat &ref, const Mat &curr, const SE3d &T_C_R, Mat &depth, Mat 
                 epipolar_direction
             );
 
-            if (ret == false) // 匹配失败
+            if (ret == false) // 경기 실패
                 continue;
 
-            // 取消该注释以显示匹配
+            // 일치 항목을 표시하려면 주석 처리를 제거하십시오.
             // showEpipolarMatch(ref, curr, Vector2d(x, y), pt_curr);
 
-            // 匹配成功，更新深度图
+            // 일치가 성공하면 깊이 맵을 업데이트합니다.
             updateDepthFilter(Vector2d(x, y), pt_curr, T_C_R, epipolar_direction, depth, depth_cov2);
         }
 }
 
-// 极线搜索
-// 方法见书 12.2 12.3 两节
+// 극지 탐색
+// 이 방법은 책의 12.2절과 12.3절에 설명되어 있습니다.
 bool epipolarSearch(
     const Mat &ref, const Mat &curr,
     const SE3d &T_C_R, const Vector2d &pt_ref,
@@ -297,38 +299,38 @@ bool epipolarSearch(
     Vector2d &pt_curr, Vector2d &epipolar_direction) {
     Vector3d f_ref = px2cam(pt_ref);
     f_ref.normalize();
-    Vector3d P_ref = f_ref * depth_mu;    // 参考帧的 P 向量
+    Vector3d P_ref = f_ref * depth_mu;    // 참조 프레임의 P 벡터
 
-    Vector2d px_mean_curr = cam2px(T_C_R * P_ref); // 按深度均值投影的像素
+    Vector2d px_mean_curr = cam2px(T_C_R * P_ref); // 깊이 평균으로 투영된 픽셀
     double d_min = depth_mu - 3 * depth_cov, d_max = depth_mu + 3 * depth_cov;
     if (d_min < 0.1) d_min = 0.1;
-    Vector2d px_min_curr = cam2px(T_C_R * (f_ref * d_min));    // 按最小深度投影的像素
-    Vector2d px_max_curr = cam2px(T_C_R * (f_ref * d_max));    // 按最大深度投影的像素
+    Vector2d px_min_curr = cam2px(T_C_R * (f_ref * d_min));    // 최소 깊이로 투영된 픽셀
+    Vector2d px_max_curr = cam2px(T_C_R * (f_ref * d_max));    // 최대 깊이로 투영된 픽셀
 
-    Vector2d epipolar_line = px_max_curr - px_min_curr;    // 极线（线段形式）
-    epipolar_direction = epipolar_line;        // 极线方向
+    Vector2d epipolar_line = px_max_curr - px_min_curr;    // 에피폴라 라인(선분 형태)
+    epipolar_direction = epipolar_line;        // 에피폴라 라인 방향
     epipolar_direction.normalize();
-    double half_length = 0.5 * epipolar_line.norm();    // 极线线段的半长度
-    if (half_length > 100) half_length = 100;   // 我们不希望搜索太多东西
+    double half_length = 0.5 * epipolar_line.norm();    // 에피폴라 세그먼트의 절반 길이
+    if (half_length > 100) half_length = 100;   // 우리는 너무 많이 검색하고 싶지 않습니다
 
-    // 取消此句注释以显示极线（线段）
+    // 에피폴라 라인(선분)을 표시하려면 이 문장의 주석을 제거하십시오.
     // showEpipolarLine( ref, curr, pt_ref, px_min_curr, px_max_curr );
 
-    // 在极线上搜索，以深度均值点为中心，左右各取半长度
+    // 에피폴라 라인을 찾아 깊이 평균을 중심으로 좌우 길이의 반을 취한다.
     double best_ncc = -1.0;
     Vector2d best_px_curr;
     for (double l = -half_length; l <= half_length; l += 0.7) { // l+=sqrt(2)
-        Vector2d px_curr = px_mean_curr + l * epipolar_direction;  // 待匹配点
+        Vector2d px_curr = px_mean_curr + l * epipolar_direction;  // 일치하는 포인트
         if (!inside(px_curr))
             continue;
-        // 计算待匹配点与参考帧的 NCC
+        // 매칭하고자 하는 점과 기준 좌표계의 NCC 계산
         double ncc = NCC(ref, curr, pt_ref, px_curr);
         if (ncc > best_ncc) {
             best_ncc = ncc;
             best_px_curr = px_curr;
         }
     }
-    if (best_ncc < 0.85f)      // 只相信 NCC 很高的匹配
+    if (best_ncc < 0.85f)      // 높은 NCC 매치만 신뢰
         return false;
     pt_curr = best_px_curr;
     return true;
@@ -337,10 +339,10 @@ bool epipolarSearch(
 double NCC(
     const Mat &ref, const Mat &curr,
     const Vector2d &pt_ref, const Vector2d &pt_curr) {
-    // 零均值-归一化互相关
-    // 先算均值
+    // 제로 평균 정규화 상호 상관
+    // 먼저 의미
     double mean_ref = 0, mean_curr = 0;
-    vector<double> values_ref, values_curr; // 参考帧和当前帧的均值
+    vector<double> values_ref, values_curr; // 기준 좌표계와 현재 좌표계의 평균
     for (int x = -ncc_window_size; x <= ncc_window_size; x++)
         for (int y = -ncc_window_size; y <= ncc_window_size; y++) {
             double value_ref = double(ref.ptr<uchar>(int(y + pt_ref(1, 0)))[int(x + pt_ref(0, 0))]) / 255.0;
@@ -356,7 +358,7 @@ double NCC(
     mean_ref /= ncc_area;
     mean_curr /= ncc_area;
 
-    // 计算 Zero mean NCC
+    // 제로 평균 NCC 계산
     double numerator = 0, demoniator1 = 0, demoniator2 = 0;
     for (int i = 0; i < values_ref.size(); i++) {
         double n = (values_ref[i] - mean_ref) * (values_curr[i] - mean_curr);
@@ -364,7 +366,7 @@ double NCC(
         demoniator1 += (values_ref[i] - mean_ref) * (values_ref[i] - mean_ref);
         demoniator2 += (values_curr[i] - mean_curr) * (values_curr[i] - mean_curr);
     }
-    return numerator / sqrt(demoniator1 * demoniator2 + 1e-10);   // 防止分母出现零
+    return numerator / sqrt(demoniator1 * demoniator2 + 1e-10);   // 분모에서 0을 방지
 }
 
 bool updateDepthFilter(
@@ -374,18 +376,18 @@ bool updateDepthFilter(
     const Vector2d &epipolar_direction,
     Mat &depth,
     Mat &depth_cov2) {
-    // 不知道这段还有没有人看
-    // 用三角化计算深度
+    // 이걸 보고 있는 사람이 있을지 모르겠다
+    // 삼각 측량으로 깊이 계산  
     SE3d T_R_C = T_C_R.inverse();
     Vector3d f_ref = px2cam(pt_ref);
     f_ref.normalize();
     Vector3d f_curr = px2cam(pt_curr);
     f_curr.normalize();
 
-    // 方程
+    // 방정식
     // d_ref * f_ref = d_cur * ( R_RC * f_cur ) + t_RC
     // f2 = R_RC * f_cur
-    // 转化成下面这个矩阵方程组
+    // 다음 행렬 방정식 시스템으로 변환
     // => [ f_ref^T f_ref, -f_ref^T f2 ] [d_ref]   [f_ref^T t]
     //    [ f_2^T f_ref, -f2^T f2      ] [d_cur] = [f2^T t   ]
     Vector3d t = T_R_C.translation();
@@ -397,12 +399,12 @@ bool updateDepthFilter(
     A(1, 0) = -A(0, 1);
     A(1, 1) = -f2.dot(f2);
     Vector2d ans = A.inverse() * b;
-    Vector3d xm = ans[0] * f_ref;           // ref 侧的结果
-    Vector3d xn = t + ans[1] * f2;          // cur 结果
-    Vector3d p_esti = (xm + xn) / 2.0;      // P的位置，取两者的平均
-    double depth_estimation = p_esti.norm();   // 深度值
+    Vector3d xm = ans[0] * f_ref;           // ref 측의 결과
+    Vector3d xn = t + ans[1] * f2;          // cur 결과
+    Vector3d p_esti = (xm + xn) / 2.0;      // P의 위치는 두 값의 평균을 취합니다.
+    double depth_estimation = p_esti.norm();   // 깊이 값
 
-    // 计算不确定性（以一个像素为误差）
+    // 불확실성 계산(1픽셀의 오류)
     Vector3d p = f_ref * depth_estimation;
     Vector3d a = p - t;
     double t_norm = t.norm();
@@ -417,7 +419,7 @@ bool updateDepthFilter(
     double d_cov = p_prime - depth_estimation;
     double d_cov2 = d_cov * d_cov;
 
-    // 高斯融合
+    // 가우스 융합
     double mu = depth.ptr<double>(int(pt_ref(1, 0)))[int(pt_ref(0, 0))];
     double sigma2 = depth_cov2.ptr<double>(int(pt_ref(1, 0)))[int(pt_ref(0, 0))];
 
@@ -430,7 +432,7 @@ bool updateDepthFilter(
     return true;
 }
 
-// 后面这些太简单我就不注释了（其实是因为懒）
+// 후자는 너무 간단해서 언급하지 않겠습니다(사실 게으름 때문에)
 void plotDepth(const Mat &depth_truth, const Mat &depth_estimate) {
     imshow("depth_truth", depth_truth * 0.4);
     imshow("depth_estimate", depth_estimate * 0.4);
@@ -439,8 +441,8 @@ void plotDepth(const Mat &depth_truth, const Mat &depth_estimate) {
 }
 
 void evaludateDepth(const Mat &depth_truth, const Mat &depth_estimate) {
-    double ave_depth_error = 0;     // 平均误差
-    double ave_depth_error_sq = 0;      // 平方误差
+    double ave_depth_error = 0;     // 평균 오차
+    double ave_depth_error_sq = 0;      // 제곱 오차
     int cnt_depth_data = 0;
     for (int y = boarder; y < depth_truth.rows - boarder; y++)
         for (int x = boarder; x < depth_truth.cols - boarder; x++) {

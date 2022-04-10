@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
     optimizer.setVerbose(true);       // 디버그 출력 설정
 
     int vertexCnt = 0, edgeCnt = 0; // vertex와 edge의 수
-    while (!fin.eof()) {
+    while (!fin.eof()) { // 한줄씩
         string name;
         fin >> name;
         if (name == "VERTEX_SE3:QUAT") {
